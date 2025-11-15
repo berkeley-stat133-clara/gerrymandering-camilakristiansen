@@ -5,24 +5,48 @@ format: typst
 
 ### Question 1
 
-Put your question here.
+Which  district has the most unequal distribution of precinct sizes?
 
 ### Answer 1
+```{r}
+nice |>
+  group_by(CDDIST) |>
+  summarise(sd_turnout = sd(TOTVOTE, na.rm = TRUE)) |>
+  arrange(desc(sd_turnout))
 
-Put your answer here.
+nice |> filter(CDDIST != 0)
+```
+
+I used the cleaned nice dataset and looked at how much precinct turnout varied within each congressional district by calculating the standard deviation of TOTVOTE. Then I saw that District 36 stood out with the highest variation in precinct size (about 1,061) while District 12 had a similarly wide spread (around 1,001), finally followed by District 32 (roughly 895).
 
 ### Question 2
 
-Put your question here.
+Which  one of the precincts had the most votes for a 3rd party in 2024?
 
 ### Answer 2
 
-Put your answer here.
+```{r}
+nice |>
+  mutate(tp = PRSLIB01 + PRSAIP01 + PRSGRN01,
+         s = tp / TOTVOTE) |>
+  slice_max(s, n = 1)
+```
+
+ I calculated the share of presidential votes going to third-party candidates and found that the highest share came from a very small precinct in Tulare County (FIPS 06107), which was only 147 votes anyway.
 
 ### Question 3
 
-Put your question here.
+Which one od the precincts had the closest  race in absolute vote margin?
 
 ### Answer 3
+
+```{r}
+nice |>
+  filter(PRSDEM01 > 0, PRSREP01 > 0) |>
+  mutate(margin = abs(PRSDEM01 - PRSREP01),
+         total_pres = PRSDEM01 + PRSREP01) |>
+  filter(margin > 0) |>
+  slice_min(margin, with_ties = FALSE)
+```
 
 Put your answer here.

@@ -3,3 +3,45 @@ title: Dashboard
 format: dashboard
 ---
 
+```{r}
+library(tidyverse)
+library(sf)
+
+oldie <- read_csv("data/g24_sov_by_g24_srprec.csv")
+newyas <- read_csv("data/ab604.csv")
+
+oldie_cd <- oldie |>
+  group_by(CDDIST) |>
+  summarise(
+    dem = sum(CNGDEM01, na.rm=TRUE),
+    rep = sum(CNGREP01, na.rm=TRUE),
+    party = if_else(dem > rep, "DEM","REP")
+  )
+
+newyas_cd <- oldie |>
+  left_join(newyas, by="SRPREC") |>
+  group_by(new_cd) |>
+  summarise(
+    dem = sum(CNGDEM01, na.rm=TRUE),
+    rep = sum(CNGREP01, na.rm=TRUE),
+    party = if_else(dem > rep,"DEM","REP")
+  ) |>
+  rename(CDDIST = new_cd)
+
+mm <- \(d,r) mean(d/(d+r), na.rm=TRUE) - median(d/(d+r), na.rm=TRUE)
+eg <- \(d,r){
+  t <- d+r
+  w <- d>r
+  (sum(ifelse(w,r,r-t/2)) - sum(ifelse(w,d-t/2,d)))/sum(t)
+}
+
+mm_old <- mm(oldie_cd$dem, oldie_cd$rep)
+eg_old <- eg(oldie_cd$dem, oldie_cd$rep)
+
+mm_new <- mm(newyas_cd$dem, newyas_cd$rep)
+eg_new <- eg(newyas_cd$dem, newyas_cd$rep)
+
+map24 <- st_read("data/shapefiles/cd_2024.shp") |>
+  st_transform(3310) |>
+  left_join(oldie_cd, by=c("DISTRICT"="CDDIST"))
+```

@@ -2,4 +2,22 @@
 title: Data Cleaning
 format: typst
 ---
+```{r}
+library(tidyverse)
 
+ugly <- read_csv("data/g24_sov_by_g24_svprec.csv", show_col_types = FALSE)
+
+nice <- ugly |>
+  mutate(
+    across(c(FIPS, SVPREC, SVPREC_KEY), as.character),
+    across(c(CDDIST, SDDIST, BEDIST), as.integer),
+    across(matches("VOTE$|DEM|REP|AIP|GRN|LIB|NLP|IND|PRS|ASS|CNG"),
+           ~ suppressWarnings(as.numeric(.x)))
+  ) |>
+  filter(TOTVOTE > 0 | !is.na(TOTVOTE))
+
+sum(duplicated(nice$SVPREC_KEY))
+summary(nice$TOTVOTE)
+
+write_csv(nice, "data/g24_sov_by_g24_svprec_clean.csv")
+```
